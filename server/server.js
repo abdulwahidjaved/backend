@@ -20,6 +20,7 @@ app.use("/api/trendingProducts", trendingProductRoutes);
 app.use("/api/recommendedProducts", recommendedProductRoutes);
 app.use("/api/allProducts", allProductRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/payment", require("./routes/payment"));
 
 // Connect to MongoDB
 mongoose

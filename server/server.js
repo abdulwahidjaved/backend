@@ -8,7 +8,9 @@ const trendingProductRoutes = require("./routes/trendingProductRoutes");
 const recommendedProductRoutes = require("./routes/recommendedProductRoutes");
 const allProductRoutes = require("./routes/allproductRoutes");
 const authRoutes = require("./routes/auth")
-
+const orderRoutes = require("./routes/orderRoutes");
+const chatRoutes = require("./routes/chatRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 const app = express();
 
 // Middleware
@@ -21,6 +23,9 @@ app.use("/api/recommendedProducts", recommendedProductRoutes);
 app.use("/api/allProducts", allProductRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/payment", require("./routes/payment"));
+app.use("/api/orders", orderRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Connect to MongoDB
 mongoose

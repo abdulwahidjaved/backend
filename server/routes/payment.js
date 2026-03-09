@@ -1,18 +1,18 @@
 const express = require("express");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
+const Order = require("../models/Order");
 
 const router = express.Router();
 
-// Initialize Razorpay
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-/* =========================================================
-   1️⃣ CREATE ORDER
-========================================================= */
+/* ===============================
+   CREATE RAZORPAY ORDER
+================================ */
 router.post("/create-order", async (req, res) => {
   try {
     const { amount } = req.body;
@@ -25,39 +25,44 @@ router.post("/create-order", async (req, res) => {
     }
 
     const options = {
-      amount: Math.round(amount * 100), // Convert to paise
+      amount: Math.round(amount * 100),
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     };
 
     const order = await razorpay.orders.create(options);
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       order,
     });
   } catch (error) {
-    console.error("Create Order Error:", error);
-
-    return res.status(500).json({
+    console.error("Razorpay Create Order Error:", error);
+    res.status(500).json({
       success: false,
-      message: "Order creation failed",
+      message: "Razorpay order creation failed",
     });
   }
 });
 
-/* =========================================================
-   2️⃣ VERIFY PAYMENT
-========================================================= */
+/* ===============================
+   VERIFY PAYMENT
+================================ */
 router.post("/verify-payment", async (req, res) => {
   try {
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
+      dbOrderId,
     } = req.body;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    if (
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature ||
+      !dbOrderId
+    ) {
       return res.status(400).json({
         success: false,
         message: "Missing payment details",
@@ -76,25 +81,24 @@ router.post("/verify-payment", async (req, res) => {
       });
     }
 
-    // ✅ OPTIONAL: Save order in database here
-    // Example:
-    /*
-    await Order.create({
-      orderId: razorpay_order_id,
-      paymentId: razorpay_payment_id,
-      amount,
-      status: "paid",
-    });
-    */
+    const updatedOrder = await Order.findByIdAndUpdate(
+      dbOrderId,
+      {
+        paymentStatus: "Paid",
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id,
+      },
+      { new: true }
+    );
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: "Payment verified successfully",
+      order: updatedOrder,
     });
   } catch (error) {
-    console.error("Verify Payment Error:", error);
-
-    return res.status(500).json({
+    console.error("Payment Verification Error:", error);
+    res.status(500).json({
       success: false,
       message: "Payment verification error",
     });
